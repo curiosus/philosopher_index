@@ -15,54 +15,27 @@ client = OpenSearch(
     ssl_show_warn = False
 )
 
-index_name = 'python-test-index'
+index_name = 'philosophy-index'
 
-# index_body = {
-#   'settings': {
-#     'index': {
-#       'number_of_shards': 4
-#     }
-#   }
-# }
-#response = client.indices.create(index=index_name, body=index_body)
-
-# document = {
-#   'title': 'Plato',
-#   'text': 'Republic',
-#   'year': '-350'
-# }
-
-# response = client.index(
-#     index = index_name,
-#     body = document,
-#     id = '1',
-#     refresh = True
-# )
-
-
-# print(response)
-
-
-
-
-
-q = 'plato'
 query = {
-  'size': 5,
-  'query': {
-    'multi_match': {
-      'query': q,
-      # 'fields': ['title^2', 'director']
-    }
-  }
+  "query": {
+      "match": {
+          "text": "Pythias"
+      }
+  }    
+
 }
 
 response = client.search(
     body = query,
-    index = 'python-test-index'
+    index = index_name 
 )
 
-print(response)
+hit_data = response["hits"]
+hits = hit_data["hits"]
+for hit in hits:
+    source = hit['_source']
+    title = source['title']
+    print(title)
 
 
-print("success")

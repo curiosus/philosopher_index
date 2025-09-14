@@ -111,6 +111,7 @@ services:
     restart: always
 
   airflow-webserver:
+    build: .
     <<: *airflow-common
     command: webserver
     ports:
@@ -128,6 +129,7 @@ services:
         condition: service_completed_successfully
 
   airflow-scheduler:
+    build: . 
     <<: *airflow-common
     command: scheduler
     healthcheck:

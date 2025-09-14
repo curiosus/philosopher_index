@@ -3,10 +3,11 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+from opensearch_utils import does_index_exist, create_index, load_index
 
 
 def fetch_philo_page(**context):
-    conf = context['dag_run'].conf
+    conf = context['dag_run'].conf.get('url')
     print(f"Received conf: {conf}")
     url = context['dag_run'].conf.get('url')
     response = requests.get(url)
@@ -18,45 +19,39 @@ def parse_philo_page(**context):
     html_content = context['ti'].xcom_pull(task_ids='fetch_philo_page')
     soup = BeautifulSoup(html_content, "html.parser")
     title = soup.title.string
-    paragraphs = soup.select("div.mw-parser-output > p")
-    text_content = "\n".join(p.get_text(separator=" ", strip=True) for p in paragraphs if p.get_text(strip=True))
+    article = soup.find("div", id="article-content")
+    paragraphs = article.find_all("p")
+    # paragraphs = soup.select("div.mw-parser-output > p")
+    # text_content = "\n".join(p.get_text(separator=" ", strip=True) for p in paragraphs if p.get_text(strip=True))
+    text_content = "\n\n".join(p.get_text(strip=True) for p in paragraphs)
+    print(f"BONG HIT text_content: {text_content}")
     return {"title": title, "text_content": text_content}
 
 def index_philo_page(**context):
     data = context['ti'].xcom_pull(task_ids='parse_philo_page')
     title = data["title"]
     text_content = data["text_content"]
+
     # what to do here
     # the next step is to index this with open search
     # after that to use spark to index multiple content types in parallel
 
-    url = "http://localhost:9200/philo-index" 
 
-
-# curl -XPUT "http://localhost:9200/hotels-index" -H 'Content-Type: application/json' -d'
-    data = {
-                "settings": {
-                    "index.knn": True
-                },
-                "mappings": {
-                    "properties": {
-                        "title": {"type": "text"},
-                        "text_content": {"type": "text"},
-                        "embedding": {
-                            "type": "knn_vector",
-                            "dimension": 384,
-                            "space_type": "consinesimil"
-                        }
-                    }
-                }
-            }
-
-
-    response = requests.put(url, json=data)
-    print(f"Status Code: {response.status_code}")
-
-
-
+    #does index already exist?
+    index_name = "philosophy-index"
+    index_exists = does_index_exist(index_name) 
+    print(f"Index exists: {index_exists}")
+    #if not exists then create index
+    if not index_exists:
+        create_index(index_name=index_name)
+    
+    #now we need to add or update the index with 
+    #the title and text_content
+    doc = {
+        'title': title,
+        'text': text_content,
+    }
+    load_index(index_name=index_name, document=doc, id=title)
 
     return {"title": title, "text_content": text_content}
 

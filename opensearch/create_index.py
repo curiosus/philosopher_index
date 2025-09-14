@@ -15,7 +15,7 @@ client = OpenSearch(
     ssl_show_warn = False
 )
 
-index_name = 'python-test-index'
+index_name = "philosophy-index" 
 index_body = {
   'settings': {
     'index': {

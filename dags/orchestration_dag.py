@@ -5,6 +5,7 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.models import DagRun, XCom
 from airflow.settings import Session
 from airflow.utils.dates import days_ago
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 
 with DAG(
     dag_id="orchestration_dag",
@@ -21,7 +22,8 @@ with DAG(
         trigger_dag_id="philo_index",
         wait_for_completion=True,
         reset_dag_run=True,
-        conf={"url": "https://en.wikipedia.org/wiki/Plato", "parent_run_id": parent_run_id},
+        # conf={"url": "https://en.wikipedia.org/wiki/Plato", "parent_run_id": parent_run_id},
+        conf={"url": "http://172.18.0.1:8000/plato.html", "parent_run_id": parent_run_id},
     )
 
     trigger_aristotle = TriggerDagRunOperator(
@@ -29,7 +31,8 @@ with DAG(
         trigger_dag_id="philo_index",
         wait_for_completion=True,
         reset_dag_run=True,
-        conf={"url": "https://en.wikipedia.org/wiki/Aristotle", "parent_run_id": parent_run_id},
+        # conf={"url": "https://en.wikipedia.org/wiki/Aristotle", "parent_run_id": parent_run_id},
+        conf={"url": "http://172.18.0.1:8000/aristotle.html", "parent_run_id": parent_run_id},
     )
 
 
@@ -38,7 +41,8 @@ with DAG(
         trigger_dag_id="philo_index",
         wait_for_completion=True,
         reset_dag_run=True,
-        conf={"url": "https://en.wikipedia.org/wiki/René_Descartes", "parent_run_id": parent_run_id},
+        # conf={"url": "https://en.wikipedia.org/wiki/René_Descartes", "parent_run_id": parent_run_id},
+        conf={"url": "http://172.18.0.1:8000/descartes.html", "parent_run_id": parent_run_id},
     )
 
     @task
@@ -72,6 +76,8 @@ with DAG(
         print("Collected Results:")
         for name, result in results:
             print(f"{name}: {result}")
+
+        
 
         session.close()
 
